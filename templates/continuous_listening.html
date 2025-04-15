@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Control | VisionAID</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --bg: #000;
+            --text: #ccc;
+            --primary: #00fff7;
+            --accent: #ff00c1;
+            --blur: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.1);
+        }
+        
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: radial-gradient(ellipse at top, #0f0c29, #302b63, #24243e);
+            color: var(--text);
+            text-align: center;
+            padding: 40px 20px;
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px var(--primary);
+        }
+        
+        .voice-panel {
+            background: var(--blur);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            margin: 30px auto;
+            position: relative;
+        }
+        
+        .voice-status {
+            font-size: 1.2rem;
+            margin: 20px 0;
+        }
+        
+        .status-active {
+            color: #4CAF50;
+        }
+        
+        .status-inactive {
+            color: #F44336;
+        }
+        
+        .voice-indicator {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 20px auto;
+            background: var(--accent);
+            box-shadow: 0 0 20px var(--accent);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .commands-list {
+            text-align: left;
+            margin: 30px auto;
+            max-width: 500px;
+            background: var(--blur);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .commands-list h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .commands-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .commands-list li {
+            margin: 10px 0;
+            padding: 5px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .command-heard {
+            font-size: 1.5rem;
+            margin: 20px 0;
+            min-height: 30px;
+            color: var(--accent);
+        }
+        
+        button {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: black;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            margin: 20px 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--accent);
+        }
+        
+        .feedback {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>👂 Voice Control Center</h1>
+    
+    <div class="voice-panel">
+        <div class="voice-indicator" id="voiceIndicator"></div>
+        <div class="voice-status" id="voiceStatus">Voice recognition is <span class="status-inactive">inactive</span></div>
+        <div class="command-heard" id="commandHeard"></div>
+        <button id="startListening">Start Listening</button>
+        <button id="stopListening" disabled>Stop Listening</button>
+        <button id="goHome">Go Home</button>
+    </div>
+    
+    <div class="commands-list">
+        <h3>Available Voice Commands</h3>
+        <ul>
+            <li>"Upload image" - Open the image upload form</li>
+            <li>"Capture from webcam" or "Take picture" - Take a photo with the webcam</li>
+            <li>"Start live object detection" or "Detect objects" - Start the object detection camera</li>
+            <li>"Start navigation" or "Navigate" - Open the navigation assistant</li>
+            <li>"Smart navigation" or "Current location" - Start navigation from your current location</li>
+            <li>"Go home" or "Main menu" - Return to the main page</li>
+            <li>"Help" or "What can I say" - List available commands</li>
+        </ul>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <script>
+        const voiceIndicator = document.getElementById('voiceIndicator');
+        const voiceStatus = document.getElementById('voiceStatus');
+        const commandHeard = document.getElementById('commandHeard');
+        const startButton = document.getElementById('startListening');
+        const stopButton = document.getElementById('stopListening');
+        const goHomeButton = document.getElementById('goHome');
+        const feedback = document.getElementById('feedback');
+        
+        let recognition;
+        let isListening = false;
+        let recognitionTimeout;
+        
+        // Initialize speech recognition
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            
+            recognition.onstart = function() {
+                isListening = true;
+                voiceStatus.innerHTML = 'Voice recognition is <span class="status-active">active</span>';
+                voiceIndicator.classList.add('pulse');
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                showFeedback("Listening for commands...");
+            };
+            
+            recognition.onend = function() {
+                if (isListening) {
+                    // If it was supposed to be listening but stopped, restart it
+                    recognition.start();
+                } else {
+                    voiceStatus.innerHTML = 'Voice recognition is <span class="status-inactive">inactive</span>';
+                    voiceIndicator.classList.remove('pulse');
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                showFeedback("Error: " + event.error);
+                if (event.error === 'no-speech') {
+                    // Restart recognition after a brief pause if no speech detected
+                    if (isListening) {
+                        setTimeout(() => {
+                            if (isListening) recognition.start();
+                        }, 1000);
+                    }
+                }
+            };
+            
+            recognition.onresult = function(event) {
+                clearTimeout(recognitionTimeout);
+                
+                const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
+                console.log('Voice command:', transcript);
+                
+                commandHeard.textContent = '"' + transcript + '"';
+                showFeedback("Processing: " + transcript);
+                
+                // Process the command
+                handleVoiceCommand(transcript);
+                
+                // Set a timeout to clear the command display after a few seconds
+                setTimeout(() => {
+                    commandHeard.textContent = '';
+                }, 5000);
+                
+                // Set a timeout to restart recognition if it stops listening
+                recognitionTimeout = setTimeout(() => {
+                    if (isListening && recognition.status !== 'active') {
+                        recognition.start();
+                    }
+                }, 3000);
+            };
+        } else {
+            voiceStatus.textContent = 'Voice recognition not supported in this browser';
+            startButton.disabled = true;
+            showFeedback("Your browser doesn't support voice recognition");
+        }
+        
+        function handleVoiceCommand(command) {
+            if (command.includes("upload image") || command.includes("upload photo")) {
+                showFeedback("Opening image upload...");
+                setTimeout(() => window.location.href = '/', 1500);
+            } else if (command.includes("capture") || command.includes("take picture") || command.includes("take photo")) {
+                showFeedback("Capturing from webcam...");
+                // Send request to capture from webcam
+                fetch('/voice_action/capture_image', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showFeedback("Image captured successfully!");
+                        setTimeout(() => window.location.href = '/?capture=true', 2000);
+                    }
+                });
+            } else if (command.includes("live") || command.includes("object detection") || command.includes("detect")) {
+                showFeedback("Starting live object detection...");
+                setTimeout(() => window.location.href = '/live', 1500);
+            } else if (command.includes("navigation") || command.includes("navigate")) {
+                showFeedback("Opening navigation assistant...");
+                setTimeout(() => window.location.href = '/#navigation', 1500);
+            } else if (command.includes("smart") || command.includes("current location")) {
+                showFeedback("Opening smart navigation...");
+                setTimeout(() => window.location.href = '/smart_navigation', 1500);
+            } else if (command.includes("go home") || command.includes("main") || command.includes("menu")) {
+                showFeedback("Going to home page...");
+                setTimeout(() => window.location.href = '/', 1500);
+            } else if (command.includes("help") || command.includes("what can i say")) {
+                showFeedback("Listing available commands");
+                speak("Available commands include: upload image, capture from webcam, detect objects, start navigation, smart navigation, go home, and help.");
+            } else {
+                showFeedback("Command not recognized. Try saying 'help'.");
+                speak("Command not recognized. Please try again or say help for available commands.");
+            }
+        }
+        
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                
+                // Pause recognition while speaking to avoid feedback loop
+                if (isListening) {
+                    recognition.stop();
+                    utterance.onend = function() {
+                        // Resume recognition after speaking
+                        if (isListening) {
+                            setTimeout(() => recognition.start(), 500);
+                        }
+                    };
+                }
+                
+                speechSynthesis.speak(utterance);
+            }
+        }
+        
+        function showFeedback(message) {
+            feedback.textContent = message;
+            feedback.classList.add('show');
+            
+            setTimeout(() => {
+                feedback.classList.remove('show');
+            }, 3000);
+        }
+        
+        startButton.addEventListener('click', function() {
+            isListening = true;
+            recognition.start();
+        });
+        
+        stopButton.addEventListener('click', function() {
+            isListening = false;
+            recognition.stop();
+            voiceStatus.innerHTML = 'Voice recognition is <span class="status-inactive">inactive</span>';
+            voiceIndicator.classList.remove('pulse');
+            startButton.disabled = false;
+            stopButton.disabled = true;
+        });
+        
+        goHomeButton.addEventListener('click', function() {
+            window.location.href = '/';
+        });
+        
+        // Start speech recognition automatically when the page loads
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (recognition) {
+                    speak("Voice control center is ready. Say help to hear available commands.");
+                    startButton.click();
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

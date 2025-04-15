@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>VisionAID</title>
+    <link rel="icon" href="static/visionaid_icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg: #0a1128;
+            --bg-gradient: linear-gradient(135deg, #0a1128 0%, #182952 100%);
+            --text: #e0e0e0;
+            --primary: #4361ee;
+            --accent: #00b4d8;
+            --blur: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.15);
+            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --card-bg: rgba(20, 40, 80, 0.7);
+            --success: #06d6a0;
+            --dark-text: #111827;
+        }
+
+        body.light {
+            --bg: #f8fafc;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --text: #1e293b;
+            --primary: #2563eb;
+            --accent: #0284c7;
+            --blur: rgba(0, 0, 0, 0.05);
+            --border: rgba(0, 0, 0, 0.1);
+            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --dark-text: #111827;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            width: 300%;
+            height: 300%;
+            background: radial-gradient(circle, rgba(67, 97, 238, 0.05), transparent 70%);
+            animation: bgMotion 50s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes bgMotion {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-50%, -50%); }
+        }
+
+        #preloader {
+            background: var(--bg);
+            color: var(--primary);
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh;
+            width: 100vw;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 17, 40, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 99;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            transition: background 0.3s ease;
+        }
+
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0;
+            margin: 0;
+            justify-content: center;
+        }
+
+        .navbar ul li a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            display: block;
+            transition: color 0.3s ease, transform 0.3s ease;
+            font-size: 0.95rem;
+            border-bottom: 2px solid transparent;
+        }
+
+        .navbar ul li a:hover {
+            color: var(--accent);
+            transform: translateY(-2px);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .toggle-mode {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 10;
+        }
+
+        .toggle-mode button {
+            width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .toggle-mode button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 120px 20px 50px;
+            position: relative;
+            z-index: 2;
+        }
+
+        header img {
+            width: 90px;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 10px var(--primary));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        #animated-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            color: var(--primary);
+            white-space: pre-line;
+            overflow: hidden;
+            border-right: 3px solid var(--accent);
+            padding: 10px;
+            text-align: center;
+            text-shadow: 0 0 15px rgba(67, 97, 238, 0.4);
+            margin-bottom: 1.5rem;
+        }
+
+        #start-button {
+            padding: 1rem 2rem;
+            margin-top: 2rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: white;
+            font-size: 1.1rem;
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #start-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(67, 97, 238, 0.4);
+        }
+
+        #main-content {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(30px);
+            transition: opacity 1s ease, transform 1s ease;
+        }
+
+        #main-content.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .container {
+            max-width: 90%;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem auto;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            max-width: 800px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .card-title {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        input, 
+        textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            transition: border 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.2);
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        button i {
+            font-size: 1.1rem;
+        }
+
+        .section-title {
+            color: var(--primary);
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 3px;
+        }
+
+        .team {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 2rem 0;
+        }
+
+        .team-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            width: 220px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+
+        .team-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .team-card h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .caption-container {
+            margin: 2rem 0;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            position: relative;
+            box-shadow: var(--card-shadow);
+        }
+
+        .caption-title {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+        }
+
+        .caption-anim {
+            display: block;
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: rgba(67, 97, 238, 0.1);
+            animation: pulse 2s infinite;
+            font-size: 1.1rem;
+            line-height: 1.7;
+            text-align: left;
+            margin: 1.5rem auto;
+            box-shadow: 0 0 15px rgba(67, 97, 238, 0.2);
+        }
+
+        .caption-controls {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .caption-controls button {
+            min-width: 180px;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px rgba(67, 97, 238, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(67, 97, 238, 0.5); }
+            100% { box-shadow: 0 0 5px rgba(67, 97, 238, 0.3); }
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            margin: 3rem auto;
+            width: 80%;
+        }
+
+        .voice-control-panel {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: var(--primary);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .voice-control-panel:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(67, 97, 238, 0.5);
+        }
+
+        .voice-icon {
+            font-size: 24px;
+            color: white;
+        }
+
+        .voice-active {
+            animation: pulse-icon 1.5s infinite;
+        }
+
+        @keyframes pulse-icon {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .voice-tooltip {
+            position: absolute;
+            background: rgba(10, 17, 40, 0.9);
+            color: white;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            bottom: 70px;
+            right: 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            width: 200px;
+            text-align: center;
+        }
+
+        .voice-control-panel:hover .voice-tooltip {
+            opacity: 1;
+        }
+
+        .voice-feedback {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            background: var(--card-bg);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            z-index: 99;
+            max-width: 300px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateY(20px);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+        }
+
+        .voice-feedback.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .continuous-voice-banner {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin: 1.5rem auto;
+            max-width: 800px;
+            border-radius: 12px;
+            font-weight: 600;
+            animation: banner-pulse 3s infinite;
+            box-shadow: 0 8px 20px rgba(0, 180, 216, 0.3);
+        }
+
+        @keyframes banner-pulse {
+            0% { box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3); }
+            50% { box-shadow: 0 8px 24px rgba(67, 97, 238, 0.5); }
+            100% { box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3); }
+        }
+
+        .continuous-voice-banner a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 0.5rem;
+        }
+
+        #voice-command-btn {
+            max-width: 300px;
+            margin: 1.5rem auto;
+            display: block;
+        }
+
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+
+        .form-row input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .form-row button {
+            white-space: nowrap;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text);
+            background: rgba(10, 17, 40, 0.3);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+
+        img.preview-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            margin: 1.5rem auto;
+            display: block;
+            border: 3px solid var(--border);
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle var(--duration) linear var(--delay) infinite;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0; transform: translateY(0); }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(100vh); }
+        }
+
+        @media (max-width: 768px) {
+            .navbar ul {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .navbar ul li a {
+                padding: 0.8rem 1rem;
+            }
+
+            #animated-title {
+                font-size: 1.8rem;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .form-row button {
+                width: 100%;
+            }
+        }
+
+        /* Additional Mobile Optimizations */
+        @media (max-width: 480px) {
+            body {
+                padding-top: 60px;
+            }
+            
+            .navbar {
+                height: auto;
+                padding: 0;
+            }
+            
+            .navbar ul {
+                width: 100%;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+                -webkit-overflow-scrolling: touch;
+                display: flex;
+                flex-direction: row;
+                padding: 0.5rem 0;
+            }
+            
+            .navbar ul::-webkit-scrollbar {
+                display: none;
+            }
+            
+            .navbar ul li {
+                flex: 0 0 auto;
+            }
+            
+            .navbar ul li a {
+                padding: 0.7rem 1rem;
+                white-space: nowrap;
+                font-size: 0.85rem;
+            }
+            
+            header {
+                padding-top: 80px;
+                padding-bottom: 30px;
+            }
+            
+            header img {
+                width: 70px;
+            }
+            
+            #animated-title {
+                font-size: 1.5rem;
+                padding: 5px;
+            }
+            
+            .card {
+                padding: 1.5rem 1rem;
+                margin: 1.5rem auto;
+            }
+            
+            .card-title {
+                font-size: 1.3rem;
+            }
+            
+            button {
+                padding: 0.8rem 1rem;
+            }
+            
+            input, textarea {
+                font-size: 16px; /* Prevents iOS zoom on focus */
+                padding: 0.8rem;
+            }
+            
+            .voice-control-panel {
+                bottom: 15px;
+                right: 15px;
+            }
+            
+            .voice-feedback {
+                max-width: 250px;
+                bottom: 85px;
+                right: 15px;
+                font-size: 0.9rem;
+            }
+            
+            .team-card {
+                width: 100%;
+                max-width: 250px;
+            }
+            
+            .team {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            hr {
+                margin: 2rem auto;
+            }
+            
+            .caption-controls {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+            
+            .caption-controls button {
+                width: 100%;
+            }
+            
+            .continuous-voice-banner a {
+                font-size: 0.9rem;
+            }
+            
+            /* Make form elements easier to tap */
+            button, input[type="file"], .team-card, .voice-control-panel {
+                cursor: pointer;
+                -webkit-tap-highlight-color: rgba(0,0,0,0);
+            }
+            
+            /* Add active states for touch interactions */
+            button:active, .team-card:active, .voice-control-panel:active {
+                transform: scale(0.97);
+            }
+            
+            /* Fix footer */
+            footer {
+                padding: 1.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            /* Hide navigation text on small screens, show only icons */
+            .nav-text {
+                display: none;
+            }
+
+            .navbar ul li a {
+                font-size: 1.2rem;
+                padding: 0.8rem 0.6rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .navbar ul li a i {
+                margin-bottom: 4px;
+                font-size: 1.3rem;
+            }
+
+            /* For extra small screens, add option to toggle navigation */
+            @media (max-width: 360px) {
+                .mobile-nav-toggle {
+                    display: flex;
+                }
+
+                .navbar {
+                    transform: translateY(-100%);
+                    transition: transform 0.3s ease;
+                }
+
+                .navbar.active {
+                    transform: translateY(0);
+                }
+            }
+        }
+
+        /* Mobile Navigation Styles */
+        .mobile-nav-toggle {
+            display: none;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            width: 40px;
+            height: 40px;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="preloader">Loading VisionAID...</div>
+
+    <!-- Mobile Nav Toggle for very small screens -->
+    <button class="mobile-nav-toggle" id="navToggle"><i class="fas fa-bars"></i></button>
+
+    <!-- Stars Background -->
+    <div class="stars" id="stars"></div>
+
+    <nav class="navbar" id="navbar">
+        <ul>
+            <li><a href="#upload"><i class="fas fa-upload"></i> <span class="nav-text">Upload</span></a></li>
+            <li><a href="#webcam"><i class="fas fa-camera"></i> <span class="nav-text">Webcam</span></a></li>
+            <li><a href="#navigation"><i class="fas fa-map-marker-alt"></i> <span class="nav-text">Navigation</span></a></li>
+            <li><a href="#object-detection"><i class="fas fa-video"></i> <span class="nav-text">Detection</span></a></li>
+            <li><a href="#smart-navigation"><i class="fas fa-walking"></i> <span class="nav-text">Smart Nav</span></a></li>
+            <li><a href="#team"><i class="fas fa-users"></i> <span class="nav-text">Team</span></a></li>
+            <li><a href="#about"><i class="fas fa-info-circle"></i> <span class="nav-text">About</span></a></li>
+            <li><a href="/continuous_listening"><i class="fas fa-microphone"></i> <span class="nav-text">Voice</span></a></li>
+        </ul>
+    </nav>
+
+    <div class="toggle-mode">
+        <button onclick="document.body.classList.toggle('light')"><i class="fas fa-adjust"></i></button>
+    </div>
+
+    <header>
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQto9LjshMWvCIyTgxW8BoK29O-o4I3R3Eug&s" alt="VisionAID Logo">
+        <h1 id="animated-title"></h1>
+        <button id="start-button"><i class="fas fa-play"></i> Start Experience</button>
+    </header>
+
+    <div id="main-content">
+        <main>
+            <div class="continuous-voice-banner">
+                <a href="/continuous_listening">
+                    <i class="fas fa-microphone"></i> Try our new HANDS-FREE VOICE CONTROL CENTER - Perfect for visually impaired users! <i class="fas fa-headphones"></i>
+                </a>
+            </div>
+
+            <button type="button" id="voice-command-btn" class="voice-btn"><i class="fas fa-microphone"></i> Activate Voice Commands</button>
+            
+            <div class="card" id="upload">
+                <h3 class="card-title">Image Upload & Analysis</h3>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="form-container">
+                        <input type="file" name="image">
+                        <button type="submit"><i class="fas fa-upload"></i> Upload & Caption</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card" id="webcam">
+                <h3 class="card-title">Webcam Capture</h3>
+                <form method="POST">
+                    <button name="capture" value="Capture from Webcam" type="submit"><i class="fas fa-camera"></i> Capture from Webcam</button>
+                </form>
+            </div>
+
+            {% if image_path %}
+                <div class="card">
+                    <h3 class="card-title">Captured Image</h3>
+                    <img src="{{ image_path }}" class="preview-image" alt="Uploaded Image">
+                </div>
+            {% endif %}
+
+            {% if caption %}
+                <div class="caption-container">
+                    <h3 class="caption-title">Image Description</h3>
+                    <p class="caption-anim">{{ caption }}</p>
+                    <div class="caption-controls">
+                        <button id="repeat-caption" type="button"><i class="fas fa-volume-up"></i> Repeat Description</button>
+                        <button id="simplify-caption" type="button"><i class="fas fa-search"></i> Simplify Description</button>
+                    </div>
+                </div>
+            {% endif %}
+
+            <hr>
+
+            <h2 id="navigation" class="section-title">Navigation Assistant</h2>
+            <div class="card">
+                <form action="/navigate" method="POST">
+                    <div class="form-container">
+                        <div class="form-row">
+                            <input type="text" name="source" id="source_manual" placeholder="Enter Source or use GPS" required>
+                            <button type="button" onclick="startVoiceRecognition('source_manual')"><i class="fas fa-microphone"></i> Speak</button>
+                        </div>
+                        <div class="form-row">
+                            <input type="text" name="destination" id="destination_manual" placeholder="Enter Destination" required>
+                            <button type="button" onclick="startVoiceRecognition('destination_manual')"><i class="fas fa-microphone"></i> Speak</button>
+                        </div>
+                        <div class="form-row">
+                            <button type="button" onclick="getLocation('source_manual')"><i class="fas fa-map-marker-alt"></i> Use GPS</button>
+                            <button type="submit"><i class="fas fa-directions"></i> Navigate</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <hr>
+
+            <div class="card">
+                <div class="form-container">
+                    <a id="object-detection" href="{{ url_for('live') }}"><button><i class="fas fa-video"></i> Start Live Object Detection</button></a>
+                    <a id="smart-navigation" href="/smart_navigation"><button><i class="fas fa-walking"></i> Smart Voice Navigation</button></a>
+                </div>
+            </div>
+
+            <hr>
+
+            <h2 id="team" class="section-title">Our Team</h2>
+            <div class="team">
+                <div class="team-card">
+                    <i class="fas fa-user-tie fa-2x" style="color: var(--accent); margin-bottom: 1rem;"></i>
+                    <h4>RENUKA PRASAD V G</h4>
+                    <p>Project Lead</p>
+                </div>
+                <div class="team-card">
+                    <i class="fas fa-robot fa-2x" style="color: var(--accent); margin-bottom: 1rem;"></i>
+                    <h4>SAMRUDH B S</h4>
+                    <p>AI Developer</p>
+                </div>
+                <div class="team-card">
+                    <i class="fas fa-server fa-2x" style="color: var(--accent); margin-bottom: 1rem;"></i>
+                    <h4>INCHARA PATEL</h4>
+                    <p>Backend Engineer</p>
+                </div>
+                <div class="team-card">
+                    <i class="fas fa-paint-brush fa-2x" style="color: var(--accent); margin-bottom: 1rem;"></i>
+                    <h4>RANJITHA H G</h4>
+                    <p>UI/UX Designer</p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div id="about" class="card">
+                <h2 class="card-title">About VisionAID</h2>
+                <p><strong>VisionAID</strong> is an AI-powered assistive tool for the visually impaired. It converts images into spoken descriptions, detects surroundings, and guides navigation using voice, GPS, and Google Maps.</p>
+            </div>
+
+            <hr>
+
+            <div id="feedback" class="card">
+                <h2 class="card-title">Feedback</h2>
+                <form id="feedback-form" method="POST" action="/submit_feedback">
+                    <div class="form-container">
+                        <input type="text" name="name" placeholder="Your Name" required>
+                        <input type="email" name="email" placeholder="Your Email" required>
+                        <textarea name="feedback" placeholder="Your feedback..." rows="4" required></textarea>
+                        <button type="submit"><i class="fas fa-paper-plane"></i> Submit Feedback</button>
+                    </div>
+                </form>
+            </div>
+
+            <hr>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 VisionAID. Built With Grace To Empower The Visually Impaired.</p>
+        </footer>
+    </div>
+
+    <!-- Floating voice control button -->
+    <div class="voice-control-panel" id="voice-control-btn">
+        <div class="voice-icon" id="voice-icon"><i class="fas fa-microphone"></i></div>
+        <div class="voice-tooltip">Click for voice commands or press Space</div>
+    </div>
+    <div class="voice-feedback" id="voice-feedback"></div>
+
+    <script>
+        const fullTitle = "Welcome to VisionAID: AI Powered Image Caption Generator\nFor Visually Impaired";
+        const titleEl = document.getElementById("animated-title");
+        const startBtn = document.getElementById("start-button");
+        const mainContent = document.getElementById("main-content");
+        const preloader = document.getElementById("preloader");
+        const voiceControlBtn = document.getElementById("voice-control-btn");
+        const voiceIcon = document.getElementById("voice-icon");
+        const voiceFeedback = document.getElementById("voice-feedback");
+        const voiceCommandBtn = document.getElementById("voice-command-btn");
+    
+        let index = 0;
+        let isListening = false;
+    
+        function typeEffect() {
+            if (index < fullTitle.length) {
+                titleEl.textContent += fullTitle.charAt(index);
+                index++;
+                setTimeout(typeEffect, 60);
+            }
+        }
+    
+        function speakTitleOnce() {
+            if ('speechSynthesis' in window) {
+                const msg = new SpeechSynthesisUtterance(fullTitle.replace("\n", " "));
+                msg.lang = "en-US";
+                msg.pitch = 1.1;
+                msg.rate = 1;
+                const voices = speechSynthesis.getVoices();
+                const preferred = voices.find(v => v.lang === "en-US" && v.name.toLowerCase().includes("google"));
+                msg.voice = preferred || voices[0];
+                speechSynthesis.cancel();
+                speechSynthesis.speak(msg);
+            }
+        }
+    
+        window.addEventListener("load", () => {
+            const hasVisited = sessionStorage.getItem("visited");
+            if (!hasVisited) {
+                setTimeout(() => {
+                    preloader.style.opacity = "0";
+                    preloader.style.visibility = "hidden";
+                    sessionStorage.setItem("visited", "true");
+                }, 2000);
+            } else {
+                preloader.style.display = "none";
+            }
+    
+            if (sessionStorage.getItem("experienceStarted")) {
+                startBtn.style.display = "none";
+                mainContent.classList.add("show");
+                if (!sessionStorage.getItem("titleSpoken")) {
+                    speakTitleOnce();
+                    sessionStorage.setItem("titleSpoken", "true");
+                }
+            }
+    
+            typeEffect();
+
+            // Announce the voice control feature after a delay
+            setTimeout(() => {
+                speak("Press the microphone button or Space key to activate voice commands.");
+            }, 5000);
+        });
+    
+        startBtn.addEventListener("click", () => {
+            mainContent.classList.add("show");
+            startBtn.style.display = "none";
+            sessionStorage.setItem("experienceStarted", "true");
+    
+            setTimeout(() => {
+                if (!sessionStorage.getItem("titleSpoken")) {
+                    speakTitleOnce();
+                    sessionStorage.setItem("titleSpoken", "true");
+                }
+            }, 600);
+        });
+    
+        function getLocation(id) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById(id).value = position.coords.latitude + "," + position.coords.longitude;
+                    speak("Your current location has been set.");
+                }, function(error) {
+                    console.error("Geolocation error:", error);
+                    speak("Unable to get your location. Please check your location permissions.");
+                });
+            } else {
+                speak("Geolocation is not supported by this browser.");
+            }
+        }
+    
+        let recognition;
+
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = function() {
+                    console.log('Voice recognition started. Speak now.');
+                    isListening = true;
+                    voiceIcon.classList.add('voice-active');
+                    showVoiceFeedback("Listening...");
+                };
+
+                recognition.onspeechend = function() {
+                    console.log('Speech recognition ended.');
+                    isListening = false;
+                    voiceIcon.classList.remove('voice-active');
+                    recognition.stop();
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event);
+                    isListening = false;
+                    voiceIcon.classList.remove('voice-active');
+                    showVoiceFeedback("Error: " + event.error);
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript.toLowerCase();
+                    console.log('Voice Command:', transcript);
+                    showVoiceFeedback('Command heard: ' + transcript);
+                    handleVoiceCommand(transcript);
+                };
+            }
+        }
+
+        function startVoiceRecognition(inputId = null) {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+            
+            if (recognition) {
+                if (inputId) {
+                    // For specific input field
+                    recognition.onresult = function(event) {
+                        const transcript = event.results[0][0].transcript;
+                        document.getElementById(inputId).value = transcript;
+                        showVoiceFeedback("Set to: " + transcript);
+                        speak("Set to " + transcript);
+                    };
+                } else {
+                    // For general commands
+                    recognition.onresult = function(event) {
+                        const transcript = event.results[0][0].transcript.toLowerCase();
+                        console.log('Voice Command:', transcript);
+                        showVoiceFeedback('Command heard: ' + transcript);
+                        handleVoiceCommand(transcript);
+                    };
+                }
+                
+                recognition.start();
+            } else {
+                showVoiceFeedback("Voice recognition not supported in this browser");
+                speak("Voice recognition not supported in this browser");
+            }
+        }
+
+        function handleVoiceCommand(command) {
+            const lowerCaseCommand = command.toLowerCase().trim();
+            console.log("Voice Command Received:", lowerCaseCommand);
+
+            // Image processing commands
+            if (lowerCaseCommand.includes("upload image") || lowerCaseCommand.includes("upload photo")) {
+                speak("Triggering image upload.");
+                document.querySelector('#upload button[type="submit"]').click();
+            } 
+            else if (lowerCaseCommand.includes("capture") || lowerCaseCommand.includes("take picture") || lowerCaseCommand.includes("webcam")) {
+                speak("Capturing from webcam.");
+                document.querySelector('#webcam button').click();
+            } 
+            // Object detection commands
+            else if (lowerCaseCommand.includes("live") || lowerCaseCommand.includes("object detection") || lowerCaseCommand.includes("detect")) {
+                speak("Starting live object detection.");
+                document.getElementById('object-detection').querySelector('button').click();
+            } 
+            // Navigation commands
+            else if (lowerCaseCommand.includes("navigation") || lowerCaseCommand.includes("navigate")) {
+                speak("Opening navigation assistant.");
+                window.location.href = "#navigation";
+                setTimeout(() => {
+                    speak("Please specify a source and destination for navigation.");
+                }, 1000);
+            } 
+            else if (lowerCaseCommand.includes("smart") || lowerCaseCommand.includes("current location")) {
+                speak("Opening smart navigation.");
+                document.getElementById('smart-navigation').querySelector('button').click();
+            } 
+            // Use GPS command
+            else if (lowerCaseCommand.includes("use gps") || lowerCaseCommand.includes("get location") || lowerCaseCommand.includes("current position")) {
+                speak("Getting your current GPS location.");
+                getLocation('source_manual');
+            }
+            // Form submission
+            else if (lowerCaseCommand.includes("submit") || lowerCaseCommand.includes("go") || lowerCaseCommand.includes("start navigation")) {
+                if (window.location.hash === "#navigation") {
+                    speak("Starting navigation.");
+                    document.querySelector('form[action="/navigate"] button[type="submit"]').click();
+                } else {
+                    speak("Please navigate to the section you want to submit first.");
+                }
+            }
+            // Go to voice control center
+            else if (lowerCaseCommand.includes("voice control") || lowerCaseCommand.includes("voice center")) {
+                speak("Opening voice control center.");
+                window.location.href = "/continuous_listening";
+            }
+            // Help command
+            else if (lowerCaseCommand.includes("help") || lowerCaseCommand.includes("what can i say")) {
+                speak("Available commands include: upload image, capture from webcam, live object detection, navigation, smart navigation, use GPS, submit, and help.");
+            }
+            else {
+                speak("Command not recognized. Say help for available commands.");
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                speechSynthesis.cancel(); // Cancel any ongoing speech
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function showVoiceFeedback(message) {
+            voiceFeedback.textContent = message;
+            voiceFeedback.classList.add('show');
+            
+            setTimeout(() => {
+                voiceFeedback.classList.remove('show');
+            }, 3000);
+        }
+
+        // Voice control button event
+        voiceControlBtn.addEventListener('click', function() {
+            if (!isListening) {
+                startVoiceRecognition();
+            }
+        });
+
+        // Voice command button
+        voiceCommandBtn.addEventListener('click', function() {
+            startVoiceRecognition();
+        });
+
+        // Add keyboard shortcut (spacebar) for voice commands
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' && !isListening && 
+                !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                e.preventDefault(); // Prevent scrolling with space
+                startVoiceRecognition();
+            }
+        });
+
+        // Initialize
+        initSpeechRecognition();
+
+        document.getElementById("feedback-form").addEventListener("submit", function (event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+
+            fetch("/submit_feedback", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert("Thank you for your feedback!");
+                speak("Thank you for your feedback!");
+                document.getElementById("feedback-form").reset();
+            })
+            .catch(error => console.error('Error submitting feedback:', error));
+        });
+
+        // Add caption repeat functionality
+        if (document.getElementById('repeat-caption')) {
+            document.getElementById('repeat-caption').addEventListener('click', function() {
+                const caption = document.querySelector('.caption-anim').textContent;
+                speak(caption);
+            });
+        }
+
+        // Add simplify description functionality
+        if (document.getElementById('simplify-caption')) {
+            document.getElementById('simplify-caption').addEventListener('click', function() {
+                const caption = document.querySelector('.caption-anim').textContent;
+                const simplifiedCaption = caption.split('.')[0] + '.'; // Just take the first sentence
+                speak("Simplified description: " + simplifiedCaption);
+            });
+        }
+
+        // Create stars background
+        function createStars() {
+            const stars = document.getElementById('stars');
+            const starCount = 150;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Random size between 1-3px
+                const size = Math.random() * 3 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                
+                // Random position
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                
+                // Random animation duration and delay
+                const duration = Math.random() * 30 + 15;
+                const delay = Math.random() * 15;
+                star.style.setProperty('--duration', `${duration}s`);
+                star.style.setProperty('--delay', `${delay}s`);
+                
+                stars.appendChild(star);
+            }
+        }
+
+        // Initialize stars on page load
+        document.addEventListener('DOMContentLoaded', createStars);
+
+        // Mobile Navigation Toggle
+        const navToggle = document.getElementById('navToggle');
+        const navbar = document.getElementById('navbar');
+        
+        if (navToggle) {
+            navToggle.addEventListener('click', function() {
+                navbar.classList.toggle('active');
+                const isExpanded = navbar.classList.contains('active');
+                navToggle.setAttribute('aria-expanded', isExpanded);
+                navToggle.innerHTML = isExpanded ? 
+                    '<i class="fas fa-times"></i>' : 
+                    '<i class="fas fa-bars"></i>';
+            });
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            if (navbar.classList.contains('active') && 
+                !navbar.contains(event.target) && 
+                event.target !== navToggle) {
+                navbar.classList.remove('active');
+                navToggle.setAttribute('aria-expanded', 'false');
+                navToggle.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        });
+
+        // Close menu when clicking a nav link
+        const navLinks = document.querySelectorAll('.navbar a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 360) {
+                    navbar.classList.remove('active');
+                    navToggle.setAttribute('aria-expanded', 'false');
+                    navToggle.innerHTML = '<i class="fas fa-bars"></i>';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Navigation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --bg: #0a0f1a;
+            --card: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent: #00fff7;
+            --primary: #007bff;
+            --text: #e0e0e0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Share Tech Mono', monospace;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1, h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent);
+            margin-bottom: 20px;
+            text-shadow: 0 0 8px var(--accent);
+        }
+
+        .navigation-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 992px) {
+            .navigation-container {
+                flex-direction: row;
+            }
+        }
+
+        .map-container, .detection-container, .instructions-container {
+            flex: 1;
+            background: var(--card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 247, 0.1);
+        }
+
+        iframe, img {
+            width: 100%;
+            height: 450px;
+            border-radius: 12px;
+            border: 2px solid var(--accent);
+        }
+
+        .instructions-list {
+            text-align: left;
+            max-height: 450px;
+            overflow-y: auto;
+            padding: 10px;
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .instruction-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .instruction-card.active {
+            background: rgba(0, 255, 247, 0.1);
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .instruction-text {
+            font-size: 1.2rem;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .instruction-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--accent);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: black;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .instruction-number {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            background: var(--accent);
+            color: var(--bg);
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .voice-controls {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Navigation with Voice Guidance</h1>
+
+    <div class="navigation-container">
+        <!-- Google Maps Direction Embed -->
+        <div class="map-container">
+            <h3>Route Map</h3>
+            <iframe src="{{ map_url }}" allowfullscreen loading="lazy"></iframe>
+        </div>
+
+        <!-- Live YOLOv5 Feed -->
+        <div class="detection-container">
+            <h3>Live Obstacle Detection</h3>
+            <img src="{{ url_for('video_feed') }}" alt="Live object detection feed" />
+        </div>
+
+        <!-- Navigation Instructions -->
+        <div class="instructions-container">
+            <h3>Navigation Instructions</h3>
+            <div class="voice-controls">
+                <button id="repeatInstructions">🔊 Repeat Current Step</button>
+                <button id="toggleAutoRead">⏯️ Auto-Read Instructions</button>
+            </div>
+            <div class="instructions-list">
+                {% if navigation_instructions %}
+                    {% for instruction in navigation_instructions %}
+                        <div class="instruction-card{% if loop.index == 1 %} active{% endif %}" data-index="{{ loop.index0 }}">
+                            <div class="instruction-number">{{ loop.index }}</div>
+                            <div class="instruction-text">{{ instruction.instruction }}</div>
+                            <div class="instruction-meta">
+                                {% if instruction.distance %}
+                                <span class="distance">Distance: {{ instruction.distance }}</span>
+                                {% endif %}
+                                {% if instruction.duration %}
+                                <span class="duration">Est. Time: {{ instruction.duration }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="instruction-card">
+                        <div class="instruction-text">No navigation instructions available.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <a href="{{ url_for('index') }}"><button>⬅️ Back to Home</button></a>
+        <button id="nextStep">▶️ Next Step</button>
+        <button id="prevStep">◀️ Previous Step</button>
+    </div>
+
+    <script>
+        const instructionCards = document.querySelectorAll('.instruction-card');
+        const nextStepBtn = document.getElementById('nextStep');
+        const prevStepBtn = document.getElementById('prevStep');
+        const repeatBtn = document.getElementById('repeatInstructions');
+        const toggleAutoReadBtn = document.getElementById('toggleAutoRead');
+        
+        let currentStep = 0;
+        let autoReadEnabled = false;
+        let autoReadInterval;
+        const instructionTexts = [];
+        
+        {% for instruction in navigation_instructions %}
+        instructionTexts.push("{{ instruction.instruction|replace('"', '\\"') }}");
+        {% endfor %}
+
+        // Initialize text-to-speech
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop any ongoing speech
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9; // Slightly slower rate for clarity
+                utterance.pitch = 1;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Highlight the current step
+        function updateActiveStep() {
+            instructionCards.forEach((card, index) => {
+                if (index === currentStep) {
+                    card.classList.add('active');
+                    // Scroll the active card into view
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+        }
+
+        // Go to next step
+        function nextStep() {
+            if (currentStep < instructionCards.length - 1) {
+                currentStep++;
+                updateActiveStep();
+                speakCurrentStep();
+            }
+        }
+
+        // Go to previous step
+        function prevStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                updateActiveStep();
+                speakCurrentStep();
+            }
+        }
+
+        // Speak the current instruction
+        function speakCurrentStep() {
+            if (currentStep >= 0 && currentStep < instructionTexts.length) {
+                speak(instructionTexts[currentStep]);
+            }
+        }
+
+        // Toggle auto-read functionality
+        function toggleAutoRead() {
+            autoReadEnabled = !autoReadEnabled;
+            
+            if (autoReadEnabled) {
+                toggleAutoReadBtn.textContent = "⏸️ Pause Auto-Read";
+                speakCurrentStep();
+                autoReadInterval = setInterval(() => {
+                    if (currentStep < instructionCards.length - 1) {
+                        nextStep();
+                    } else {
+                        // Stop auto-read when we reach the end
+                        toggleAutoRead();
+                    }
+                }, 10000); // Read next instruction every 10 seconds
+            } else {
+                toggleAutoReadBtn.textContent = "▶️ Auto-Read Instructions";
+                clearInterval(autoReadInterval);
+            }
+        }
+
+        // Add event listeners
+        nextStepBtn.addEventListener('click', nextStep);
+        prevStepBtn.addEventListener('click', prevStep);
+        repeatBtn.addEventListener('click', speakCurrentStep);
+        toggleAutoReadBtn.addEventListener('click', toggleAutoRead);
+
+        // Make instruction cards clickable
+        instructionCards.forEach((card, index) => {
+            card.addEventListener('click', () => {
+                currentStep = index;
+                updateActiveStep();
+                speakCurrentStep();
+            });
+        });
+
+        // Keyboard navigation support
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowRight' || e.code === 'Space') {
+                nextStep();
+            } else if (e.code === 'ArrowLeft') {
+                prevStep();
+            } else if (e.code === 'KeyR') {
+                speakCurrentStep();
+            }
+        });
+
+        // Speak first instruction on page load
+        window.addEventListener('load', () => {
+            // Small timeout to let the page fully render
+            setTimeout(() => {
+                speakCurrentStep();
+                
+                // Announce available controls
+                setTimeout(() => {
+                    speak("Navigation started. Use the next and previous buttons to move through step-by-step instructions. Each step will be read aloud.");
+                }, 3000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
